@@ -1,0 +1,43 @@
+name: Build XWiki Package
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout XWiki
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Syntax check core scripts
+        run: |
+          find src bin lib -name "*.js" -type f -exec node --check {} +
+
+      - name: Pack npm tarball
+        run: |
+          mkdir -p dist-pkg
+          npm pack --pack-destination ./dist-pkg
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xwiki-package
+          path: dist-pkg/*.tgz
+          retention-days: 14
